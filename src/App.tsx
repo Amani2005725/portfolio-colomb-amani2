@@ -211,7 +211,7 @@ function Home() {
         </motion.form></div>
       </section>
     </main>
-    <footer className="site-footer container"><a className="brand" href="#home"><span className="brand-mark">C<span>.</span></span><span>COLOMB<span className="brand-muted"> / DIGITAL</span></span></a><span>Conçu avec curiosité et beaucoup de café <span className="orange">✳</span></span><span>© {new Date().getFullYear()} Colomb Amani</span><a href="/admin" className="admin-footer-link">Admin <ArrowUpRight size={13}/></a></footer>
+    <footer className="site-footer container"><a className="brand" href="#home"><span className="brand-mark">C<span>.</span></span><span>AMCOL<span className="brand-muted"> / DEV</span></span></a><span>Conçu avec curiosité et beaucoup de café <span className="orange">✳</span></span><span>© {new Date().getFullYear()} Colomb Amani</span><a href="/admin" className="admin-footer-link">Admin <ArrowUpRight size={13}/></a></footer>
   </div>
 }
 

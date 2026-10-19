@@ -265,7 +265,7 @@ body::after {
 .marquee-track { display: flex; width: max-content; gap: 2.5rem; animation: marquee 38s linear infinite; }
 .marquee-track span { font: 800 clamp(1.4rem, 3vw, 2.2rem) var(--font-title); letter-spacing: 0.02em; white-space: nowrap; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.35); transition: color .3s; }
 .marquee-track span:hover { color: var(--text); }
-.marquee-track i { margin-left: 1.5rem; font-style: normal; color: var(--orange); -webkit-text-stroke: 0; }
+.marquee-track i { margin-left: 2.5rem; font-style: normal; color: var(--orange); -webkit-text-stroke: 0; }
 
 /* ---------------------------------------------------------------------
    8. SECTIONS GÉNÉRALES

@@ -53,6 +53,7 @@ function Home() {
   const [services, setServices] = useState<Service[]>(demoServices)
   const [projects, setProjects] = useState<Project[]>(demoProjects)
   const [creativeWorks, setCreativeWorks] = useState<CreativeWork[]>([])
+  const [selectedWork, setSelectedWork] = useState<CreativeWork | null>(null)
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -67,6 +68,15 @@ function Home() {
     ]).then(([a, b, c, d]) => { setSkills(a.filter(x => x.published)); setServices(b.filter(x => x.published)); setProjects(c.filter(x => x.published)); setCreativeWorks(d.filter(x => x.published)) })
       .catch(() => { /* Keep demo content visible if the network is unavailable. */ })
   }, [])
+
+  useEffect(() => {
+    if (!selectedWork) return
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setSelectedWork(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [selectedWork])
 
   async function submitContact(e: React.FormEvent) {
     e.preventDefault(); setSending(true); setError('')
@@ -197,15 +207,28 @@ function Home() {
         </div>
         {creativeWorks.length > 0 ? <div className="creative-marquee" aria-label="Défilement continu des réalisations graphiques et vidéos">
           <div className="creative-track">{[...creativeWorks, ...creativeWorks].map((work, i) => <article className="creative-card" key={`${work.id}-${i}`}>
-            <div className="creative-media">{work.media_type === 'video'
-              ? <video src={work.media_url} muted autoPlay loop playsInline preload="metadata" aria-label={work.title} />
-              : <img src={work.media_url} alt={work.title} loading="lazy" />}
-              <span className="creative-tag"><Film size={13} />{work.category}</span>
-            </div>
+            <button type="button" className="creative-preview" onClick={() => setSelectedWork(work)} aria-label={`Voir ${work.title} en grand format`}>
+              <span className="creative-media">{work.media_type === 'video'
+                ? <video src={work.media_url} muted autoPlay loop playsInline preload="metadata" aria-label={work.title} />
+                : <img src={work.media_url} alt={work.title} loading="lazy" />}
+                <span className="creative-tag"><Film size={13} />{work.category}</span>
+                <span className="creative-zoom">{work.media_type === 'video' ? 'Lire la vidéo' : 'Voir en grand'} <ArrowUpRight size={15}/></span>
+              </span>
+            </button>
             <div className="creative-info"><h3>{work.title}</h3>{work.description && <p>{work.description}</p>}</div>
           </article>)}</div>
         </div> : <div className="container creative-empty">Mes créations graphiques et montages vidéo seront bientôt affichés ici.</div>}
       </section>
+
+      {selectedWork && <div className="creative-lightbox" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedWork(null) }}>
+        <section className="creative-lightbox-panel" role="dialog" aria-modal="true" aria-labelledby="creative-lightbox-title">
+          <button type="button" className="creative-lightbox-close" onClick={() => setSelectedWork(null)} aria-label="Fermer l’aperçu"><X size={22}/></button>
+          <div className="creative-lightbox-media">{selectedWork.media_type === 'video'
+            ? <video src={selectedWork.media_url} controls autoPlay playsInline />
+            : <img src={selectedWork.media_url} alt={selectedWork.title} />}</div>
+          <div className="creative-lightbox-caption"><span>{selectedWork.category}</span><h2 id="creative-lightbox-title">{selectedWork.title}</h2>{selectedWork.description && <p>{selectedWork.description}</p>}</div>
+        </section>
+      </div>}
 
       <section className="section container approach-section">
         <SectionHeading eyebrow="05 / MA MÉTHODE" title="Simple dans l'approche." accent="Exigeant sur le résultat."/>

@@ -146,8 +146,8 @@ function Home() {
       </section>
          
       <section className="marquee" aria-label="Technologies"><div className="marquee-track">
-        {['JAVASCRIPT','REACT','FLUTTER','SUPABASE','TYPESCRIPT','UI / UX','DIGITAL PRODUCTS','LARAVEL','POSTGRESQL',
-        'FIREBASE','NODE JS','TAILWIND CSS','DJANGO','WORDPRESS','WINDEV','PYTHON'].map((x,i)=>
+        {['JAVASCRIPT','REACT JS','FLUTTER','SUPABASE','TYPESCRIPT','UI / UX','DIGITAL PRODUCTS','LARAVEL','POSTGRESQL',
+        'FIREBASE','NODE JS','TAILWIND CSS','DJANGO','WORDPRESS','WINDEV','PYTHON','DEV WEB','DEV MOBILE','DEV DESKTOP','FONDATEUR DE SAAS','ENTREPRENEUR DIGITAL'].map((x,i)=>
         <span key={i}>{x}<i>✳</i></span>)}</div></section>
 
       <section id="about" className="section container about-section">

@@ -4,10 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowDown, ArrowDownRight, ArrowRight, ArrowUpRight, Atom, Check, ChevronDown,
   Code2, Database, ExternalLink, Github, Globe, Layers, Linkedin, Mail, Menu,
-  MessageCircle, MousePointer2, Send, Smartphone, Sparkles, Terminal, Workflow, X
+  MessageCircle, MousePointer2, Send, Smartphone, Sparkles, Terminal, Workflow, X, Film
 } from 'lucide-react'
 import { supabase } from './lib/supabase'
-import { demoProjects, demoServices, demoSkills, fetchCollection, type Project, type Service, type Skill } from './lib/data'
+import { demoProjects, demoServices, demoSkills, fetchCollection, type Project, type Service, type Skill, type CreativeWork } from './lib/data'
 import Admin from './pages/Admin'
 
 const icons: Record<string, typeof Code2> = { Code2, Atom, Smartphone, Database, Globe, Layers, Workflow, Terminal }
@@ -29,7 +29,7 @@ function ScrollToTop() {
 
 function Header() {
   const [open, setOpen] = useState(false)
-  const links = [['À propos', '#about'], ['Compétences', '#skills'], ['Services', '#services'], ['Projets', '#projects'], ['Contact', '#contact']]
+  const links = [['À propos', '#about'], ['Compétences', '#skills'], ['Services', '#services'], ['Projets', '#projects'], ['Réalisations', '#creative-works'], ['Contact', '#contact']]
   return <header className="site-header">
     <a className="brand" href="/#home" aria-label="Retour à l'accueil"><span className="brand-mark">CA<span>.</span></span><span>COLOMB AMANI<span className="brand-muted"> / DEV</span></span></a>
     <button className="mobile-toggle" onClick={() => setOpen(!open)} aria-label="Ouvrir le menu">{open ? <X /> : <Menu />}</button>
@@ -52,6 +52,7 @@ function Home() {
   const [skills, setSkills] = useState<Skill[]>(demoSkills)
   const [services, setServices] = useState<Service[]>(demoServices)
   const [projects, setProjects] = useState<Project[]>(demoProjects)
+  const [creativeWorks, setCreativeWorks] = useState<CreativeWork[]>([])
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -62,7 +63,8 @@ function Home() {
       fetchCollection<Skill>('skills', demoSkills),
       fetchCollection<Service>('services', demoServices),
       fetchCollection<Project>('projects', demoProjects),
-    ]).then(([a, b, c]) => { setSkills(a.filter(x => x.published)); setServices(b.filter(x => x.published)); setProjects(c.filter(x => x.published)) })
+      fetchCollection<CreativeWork>('creative_works', []),
+    ]).then(([a, b, c, d]) => { setSkills(a.filter(x => x.published)); setServices(b.filter(x => x.published)); setProjects(c.filter(x => x.published)); setCreativeWorks(d.filter(x => x.published)) })
       .catch(() => { /* Keep demo content visible if the network is unavailable. */ })
   }, [])
 
@@ -187,6 +189,22 @@ function Home() {
           </motion.article>)}</div>
           <p className="fine-print">Certains projets sont présentés comme études ou prototypes. Remplace les contenus de démonstration par tes réalisations publiables.</p>
         </div>
+      </section>
+
+      <section id="creative-works" className="section creative-section">
+        <div className="container creative-heading"><SectionHeading eyebrow="05 / UNIVERS CRÉATIF" title="Mes réalisations" accent="graphiques & vidéos." />
+          <p>Graphiste et vidéaste, je crée des affiches et donne vie aux idées grâce au montage vidéo.</p>
+        </div>
+        {creativeWorks.length > 0 ? <div className="creative-marquee" aria-label="Défilement continu des réalisations graphiques et vidéos">
+          <div className="creative-track">{[...creativeWorks, ...creativeWorks].map((work, i) => <article className="creative-card" key={`${work.id}-${i}`}>
+            <div className="creative-media">{work.media_type === 'video'
+              ? <video src={work.media_url} muted autoPlay loop playsInline preload="metadata" aria-label={work.title} />
+              : <img src={work.media_url} alt={work.title} loading="lazy" />}
+              <span className="creative-tag"><Film size={13} />{work.category}</span>
+            </div>
+            <div className="creative-info"><h3>{work.title}</h3>{work.description && <p>{work.description}</p>}</div>
+          </article>)}</div>
+        </div> : <div className="container creative-empty">Mes créations graphiques et montages vidéo seront bientôt affichés ici.</div>}
       </section>
 
       <section className="section container approach-section">

@@ -17,6 +17,12 @@ export type Project = {
   published: boolean;
 };
 
+export type CreativeWork = {
+  id: string; title: string; description: string; media_url: string;
+  media_type: 'image' | 'video'; category: string; published: boolean;
+  sort_order?: number; created_at?: string;
+}
+
 
 export const demoSkills: Skill[] = [
   { id: 's1', name: 'JavaScript', category: 'Développement web', description: 'Interfaces interactives et logique applicative.', level: 78, icon: 'Code2', published: true },
@@ -36,17 +42,17 @@ export const demoProjects: Project[] = [
   { id: 'p3', title: 'Application mobile', description: 'Prototype d’application mobile avec authentification et espace utilisateur.', category: 'Mobile', image_url: '', technologies: ['Flutter', 'Dart', 'Firebase'], live_url: '', github_url: '', featured: false, published: true },
 ]
 
-export async function fetchCollection<T>(table: 'skills' | 'services' | 'projects', fallback: T[]): Promise<T[]> {
+export async function fetchCollection<T>(table: 'skills' | 'services' | 'projects' | 'creative_works', fallback: T[]): Promise<T[]> {
   if (!supabase) return fallback
   const query = supabase.from(table).select('*')
-  const { data, error } = table === 'projects'
+  const { data, error } = table === 'projects' || table === 'creative_works'
     ? await query.order('created_at', { ascending: false })
     : await query.order('sort_order', { ascending: true })
   if (error) throw error
   return (data ?? []) as T[]
 }
 
-export async function saveRecord(table: 'skills' | 'services' | 'projects', record: Record<string, unknown> & { id?: string }) {
+export async function saveRecord(table: 'skills' | 'services' | 'projects' | 'creative_works', record: Record<string, unknown> & { id?: string }) {
   if (!supabase) throw new Error('Configurez Supabase dans le fichier .env pour activer la sauvegarde en ligne.')
   const payload = { ...record, updated_at: new Date().toISOString() }
   const result = record.id
@@ -56,7 +62,7 @@ export async function saveRecord(table: 'skills' | 'services' | 'projects', reco
   return result.data
 }
 
-export async function deleteRecord(table: 'skills' | 'services' | 'projects', id: string) {
+export async function deleteRecord(table: 'skills' | 'services' | 'projects' | 'creative_works', id: string) {
   if (!supabase) throw new Error('Configurez Supabase dans le fichier .env.')
   const { error } = await supabase.from(table).delete().eq('id', id)
   if (error) throw error

@@ -4,23 +4,24 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Boxes, Code2, Eye, FolderKanban, LayoutDashboard,
   LogOut, Plus, Save, Trash2, X, BriefcaseBusiness, AlertCircle,
-  Inbox, Check, UserRound, ImagePlus, Camera
+  Inbox, Check, UserRound, ImagePlus, Camera, Film
 } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import {
   deleteRecord, fetchCollection, saveRecord, demoProjects, demoServices,
-  demoSkills, type Project, type Service, type Skill
+  demoSkills, type Project, type Service, type Skill, type CreativeWork
 } from '../lib/data'
 
-type Kind = 'skills' | 'services' | 'projects'
+type Kind = 'skills' | 'services' | 'projects' | 'creative_works'
 type Section = Kind | 'overview' | 'messages' | 'profile'
-type AnyRecord = Skill | Service | Project
+type AnyRecord = Skill | Service | Project | CreativeWork
 
 const menu: { id: Section; label: string; icon: typeof Code2 }[] = [
   { id: 'overview', label: 'Vue d’ensemble', icon: LayoutDashboard },
   { id: 'skills', label: 'Compétences', icon: Code2 },
   { id: 'services', label: 'Services', icon: BriefcaseBusiness },
   { id: 'projects', label: 'Projets', icon: FolderKanban },
+  { id: 'creative_works', label: 'Réalisations graphiques & vidéos', icon: Film },
   { id: 'messages', label: 'Messages', icon: Inbox },
   { id: 'profile', label: 'Profil', icon: UserRound },
 ]
@@ -30,14 +31,14 @@ const emptyFor = (kind: Kind): Record<string, any> =>
     ? { name: '', category: 'Développement web', description: '', level: 70, icon: 'Code2', published: true, sort_order: 0 }
     : kind === 'services'
       ? { title: '', description: '', icon: 'Layers', published: true, sort_order: 0 }
-      : {
+    : kind === 'projects' ? {
           title: '', description: '', category: 'Web app',
           image_url: '', image_urls: [], technologies: [],
           live_url: '', github_url: '', featured: false, published: true
-        }
+        } : { title: '', description: '', media_url: '', media_type: 'image', category: 'Graphisme', published: true, sort_order: 0 }
 
 const labelFor = (kind: Kind) =>
-  kind === 'skills' ? 'compétence' : kind === 'services' ? 'service' : 'projet'
+  kind === 'skills' ? 'compétence' : kind === 'services' ? 'service' : kind === 'creative_works' ? 'réalisation' : 'projet'
 
 function safeFileName(name: string) {
   return name.normalize('NFD')
@@ -77,6 +78,7 @@ export default function Admin() {
   const [skills, setSkills] = useState<Skill[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [projects, setProjects] = useState<Project[]>([])
+  const [creativeWorks, setCreativeWorks] = useState<CreativeWork[]>([])
   const [messages, setMessages] = useState<any[]>([])
 
   const [editKind, setEditKind] = useState<Kind | null>(null)
@@ -95,20 +97,24 @@ export default function Admin() {
   const [projectFiles, setProjectFiles] = useState<File[]>([])
   const [projectPreviews, setProjectPreviews] = useState<string[]>([])
   const [projectImageUrls, setProjectImageUrls] = useState<string[]>([])
+  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [mediaPreview, setMediaPreview] = useState('')
 
   async function loadData() {
     if (!supabase) {
       setSkills(demoSkills)
       setServices(demoServices)
       setProjects(demoProjects)
+      setCreativeWorks([])
       return
     }
 
     try {
-      const [s, v, p, m, profile] = await Promise.all([
+      const [s, v, p, cw, m, profile] = await Promise.all([
         fetchCollection<Skill>('skills', []),
         fetchCollection<Service>('services', []),
         fetchCollection<Project>('projects', []),
+        fetchCollection<CreativeWork>('creative_works', []),
         supabase.from('contact_messages')
           .select('*').order('created_at', { ascending: false }),
         supabase.from('admin_profile')
@@ -120,6 +126,7 @@ export default function Admin() {
       setSkills(s)
       setServices(v)
       setProjects(p)
+      setCreativeWorks(cw)
       setMessages(m.data ?? [])
 
       if (profile.data) {
@@ -187,13 +194,14 @@ export default function Admin() {
   }
 
   function records(kind: Kind): AnyRecord[] {
-    return kind === 'skills' ? skills : kind === 'services' ? services : projects
+    return kind === 'skills' ? skills : kind === 'services' ? services : kind === 'projects' ? projects : creativeWorks
   }
 
   function updateList(kind: Kind, list: AnyRecord[]) {
     if (kind === 'skills') setSkills(list as Skill[])
     else if (kind === 'services') setServices(list as Service[])
-    else setProjects(list as Project[])
+    else if (kind === 'projects') setProjects(list as Project[])
+    else setCreativeWorks(list as CreativeWork[])
   }
 
   function clearProjectFiles() {
@@ -205,6 +213,7 @@ export default function Admin() {
   function startCreate(kind: Kind) {
     clearProjectFiles()
     setProjectImageUrls([])
+    setMediaFile(null); setMediaPreview('')
     setEditKind(kind)
     setEditRecord(emptyFor(kind))
   }
@@ -227,9 +236,19 @@ export default function Admin() {
       data.image_url = urls[0] || ''
       data.technologies = project.technologies.join(', ')
     }
+    if (kind === 'creative_works') { setMediaFile(null); setMediaPreview((record as CreativeWork).media_url) }
 
     setEditKind(kind)
     setEditRecord(data)
+  }
+
+  function chooseCreativeMedia(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; e.target.value = ''
+    if (!file) return
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) { setNotice('Choisis une image ou une vidéo valide.'); return }
+    if (mediaPreview.startsWith('blob:')) URL.revokeObjectURL(mediaPreview)
+    setMediaFile(file); setMediaPreview(URL.createObjectURL(file))
+    setEditRecord(current => ({ ...current, media_type: file.type.startsWith('video/') ? 'video' : 'image' }))
   }
 
   // Ouvrir la galerie et choisir les images du projet
@@ -303,6 +322,11 @@ export default function Admin() {
           .map((x: string) => x.trim())
           .filter(Boolean)
       }
+      if (editKind === 'creative_works' && mediaFile) {
+        payload.media_url = await uploadImage(mediaFile, 'creative-works')
+        payload.media_type = mediaFile.type.startsWith('video/') ? 'video' : 'image'
+      }
+      if (editKind === 'creative_works' && !payload.media_url) throw new Error('Ajoute une image ou une vidéo avant d’enregistrer.')
 
       const saved = await saveRecord(editKind, payload) as AnyRecord
 
@@ -315,6 +339,8 @@ export default function Admin() {
 
       setEditKind(null)
       clearProjectFiles()
+      if (mediaPreview.startsWith('blob:')) URL.revokeObjectURL(mediaPreview)
+      setMediaPreview(''); setMediaFile(null)
       setNotice(`${labelFor(editKind)} enregistré avec succès.`)
     } catch (err) {
       setNotice(err instanceof Error ? err.message : 'Impossible de sauvegarder.')
@@ -559,6 +585,7 @@ export default function Admin() {
             <Stat icon={Code2} label="Compétences" value={skills.length} detail="Éléments enregistrés" />
             <Stat icon={BriefcaseBusiness} label="Services" value={services.length} detail="Offres configurées" />
             <Stat icon={FolderKanban} label="Projets" value={projects.length} detail="Réalisations enregistrées" />
+            <Stat icon={Film} label="Graphisme & vidéo" value={creativeWorks.length} detail="Médias enregistrés" />
             <Stat icon={Inbox} label="Messages non lus" value={messages.filter(m => !m.is_read).length} detail="Demandes à consulter" />
           </div>
 
@@ -576,6 +603,9 @@ export default function Admin() {
               <button onClick={() => { setSection('services'); startCreate('services') }}>
                 <Plus size={18} /><span><strong>Ajouter un service</strong><small>Présenter une offre</small></span>
               </button>
+              <button onClick={() => { setSection('creative_works'); startCreate('creative_works') }}>
+                <Plus size={18} /><span><strong>Ajouter une réalisation</strong><small>Affiche, graphisme ou montage vidéo</small></span>
+              </button>
             </div>
           </div>
 
@@ -590,7 +620,7 @@ export default function Admin() {
           </div>
         </>}
 
-        {(section === 'skills' || section === 'services' || section === 'projects') && (
+        {(section === 'skills' || section === 'services' || section === 'projects' || section === 'creative_works') && (
           <div className="admin-content-card">
             <div className="card-title-row">
               <div>
@@ -782,6 +812,22 @@ export default function Admin() {
               </label>
             </>}
 
+            {editKind === 'creative_works' && <>
+              <Field label="Titre de la réalisation" value={editRecord.title || ''} onChange={v => setEditRecord({ ...editRecord, title: v })} required />
+              <Field label="Type de réalisation (Graphisme, Affiche, Montage vidéo…)" value={editRecord.category || ''} onChange={v => setEditRecord({ ...editRecord, category: v })} required />
+              <Field label="Description" value={editRecord.description || ''} onChange={v => setEditRecord({ ...editRecord, description: v })} />
+              <div style={{ margin: '14px 0' }}>
+                <label htmlFor="creative-media-input" className="button button-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <ImagePlus size={17} /> Choisir une image ou une vidéo
+                </label>
+                <input id="creative-media-input" type="file" accept="image/*,video/*" onChange={chooseCreativeMedia} style={{ display: 'none' }} />
+                {mediaPreview && (editRecord.media_type === 'video'
+                  ? <video src={mediaPreview} controls style={{ display: 'block', width: '100%', maxHeight: 240, marginTop: 12, borderRadius: 10 }} />
+                  : <img src={mediaPreview} alt="Aperçu de la réalisation" style={{ display: 'block', width: '100%', maxHeight: 240, objectFit: 'contain', marginTop: 12, borderRadius: 10 }} />)}
+                <p style={{ marginTop: 8 }}>Les images et vidéos seront affichées dans le défilement public.</p>
+              </div>
+            </>}
+
             <label className="checkbox-label">
               <input type="checkbox" checked={!!editRecord.published}
                 onChange={e => setEditRecord({ ...editRecord, published: e.target.checked })} />
@@ -858,7 +904,7 @@ function RecordList({ kind, items, onEdit, onDelete }: {
             <div className="record-symbol">
               {kind === 'skills' ? <Code2 size={18} />
                 : kind === 'services' ? <BriefcaseBusiness size={18} />
-                : <FolderKanban size={18} />}
+                : kind === 'creative_works' ? <Film size={18} /> : <FolderKanban size={18} />}
             </div>
             <div className="record-main">
               <strong>{title}</strong>

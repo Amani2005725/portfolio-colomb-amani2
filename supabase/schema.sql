@@ -45,6 +45,19 @@ create table if not exists public.projects (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.creative_works (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text not null default '',
+  media_url text not null,
+  media_type text not null check (media_type in ('image', 'video')),
+  category text not null default 'Graphisme',
+  published boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.contact_messages (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -61,6 +74,7 @@ alter table public.admin_users enable row level security;
 alter table public.skills enable row level security;
 alter table public.services enable row level security;
 alter table public.projects enable row level security;
+alter table public.creative_works enable row level security;
 alter table public.contact_messages enable row level security;
 
 -- A user is an admin only if its auth ID is explicitly registered in admin_users.
@@ -95,6 +109,11 @@ for select to anon, authenticated using (published = true or public.is_portfolio
 create policy "Admins manage projects" on public.projects
 for all to authenticated using (public.is_portfolio_admin()) with check (public.is_portfolio_admin());
 
+create policy "Public reads published creative works" on public.creative_works
+for select to anon, authenticated using (published = true or public.is_portfolio_admin());
+create policy "Admins manage creative works" on public.creative_works
+for all to authenticated using (public.is_portfolio_admin()) with check (public.is_portfolio_admin());
+
 create policy "Visitors can send contact messages" on public.contact_messages
 for insert to anon, authenticated with check (
   length(trim(name)) between 2 and 120 and
@@ -108,7 +127,7 @@ for update to authenticated using (public.is_portfolio_admin()) with check (publ
 create policy "Admins can delete messages" on public.contact_messages
 for delete to authenticated using (public.is_portfolio_admin());
 
-grant select on public.skills, public.services, public.projects to anon, authenticated;
-grant insert, update, delete on public.skills, public.services, public.projects to authenticated;
+grant select on public.skills, public.services, public.projects, public.creative_works to anon, authenticated;
+grant insert, update, delete on public.skills, public.services, public.projects, public.creative_works to authenticated;
 grant insert on public.contact_messages to anon, authenticated;
 grant select, update, delete on public.contact_messages to authenticated;

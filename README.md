@@ -23,6 +23,7 @@ Portfolio React + TypeScript, animé avec Framer Motion, palette noir / orange /
 ## Configurer Supabase (important)
 1. Créez un projet dans Supabase.
 2. Ouvrez SQL Editor et exécutez `supabase/schema.sql`.
+   Pour une base déjà installée, exécutez `supabase/creative_works_migration.sql` afin d'ajouter la table, les droits de stockage des images et vidéos et le défilement des réalisations.
 3. Dans Authentication > Users, créez votre utilisateur administrateur.
 4. Dans SQL Editor, exécutez ensuite la commande ci-dessous en remplaçant l'e-mail :
    ```sql
@@ -37,7 +38,7 @@ Sans variables Supabase, le portfolio public utilise des données de démonstrat
 ## Fonctionnalités
 - Page publique responsive avec sections profil, compétences, services, projets, contact.
 - Dashboard protégé par Supabase Auth et contrôle de rôle `admin_users`.
-- CRUD des compétences, services et projets.
+- CRUD des compétences, services, projets et réalisations graphiques/vidéo.
 - Formulaire de contact stocké en base.
 - Réseaux sociaux et contacts configurables dans `.env`.
 - Animations réduites automatiquement si l'utilisateur le demande dans son système.
